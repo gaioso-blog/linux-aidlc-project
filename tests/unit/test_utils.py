@@ -1,9 +1,9 @@
 """Unit tests for utility modules (config, auth)."""
-import pytest
-from unittest.mock import patch, MagicMock
 
-from src.utils.config import Config, get_config
+import pytest
+
 from src.utils.auth import AuthError, extract_token_from_header
+from src.utils.config import get_config
 
 
 class TestConfig:

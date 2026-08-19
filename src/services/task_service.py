@@ -1,7 +1,5 @@
 """Business logic for Task management."""
 import os
-from datetime import datetime, timezone
-from typing import Optional
 
 import boto3
 from aws_lambda_powertools import Logger
@@ -105,7 +103,7 @@ class TaskService:
         logger.info("Task assigned", task_id=task_id, assignee_id=assignee_id)
         return updated
 
-    def _get_user_email(self, user_id: str) -> Optional[str]:
+    def _get_user_email(self, user_id: str) -> str | None:
         """Resolve user email: try DynamoDB cache first, then Cognito directly."""
         # Try DynamoDB cache
         user = self._user_repo.get_by_id(user_id)
@@ -133,8 +131,8 @@ class TaskService:
 
     def list_tasks(
         self,
-        status_filter: Optional[str] = None,
-        assignee_filter: Optional[str] = None,
+        status_filter: str | None = None,
+        assignee_filter: str | None = None,
     ) -> list[Task]:
         """List tasks with optional filters for status and assignee.
 

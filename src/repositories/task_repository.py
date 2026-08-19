@@ -1,10 +1,9 @@
 """DynamoDB repository for Task entities."""
 import os
 from decimal import Decimal
-from typing import Any, Optional
 
 import boto3
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Attr
 
 from src.models.task import Task
 
@@ -71,7 +70,7 @@ class TaskRepository:
     # Read operations
     # ------------------------------------------------------------------
 
-    def get_by_id(self, task_id: str) -> Optional[Task]:
+    def get_by_id(self, task_id: str) -> Task | None:
         """Return a single task or None if not found."""
         response = self._table.get_item(Key={"task_id": task_id})
         item = response.get("Item")

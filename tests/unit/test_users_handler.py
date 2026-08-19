@@ -27,7 +27,7 @@ def _make_apigw_event(
 
 @pytest.fixture(autouse=True)
 def mock_auth():
-    with patch.object(users_handler_module, "validate_token") as mock_validate:
+    with patch.object(users_handler_module, "_require_auth") as mock_validate:
         mock_validate.return_value = {
             "sub": "user-sub-001",
             "email": "dev@example.com",
@@ -80,12 +80,8 @@ def test_list_users_returns_200():
 
 def test_list_users_unauthorized_returns_401():
     """GET /v1/users with invalid token returns 401."""
-    from src.utils.auth import AuthError
-
-    with patch.object(users_handler_module, "validate_token") as mock_validate:
-        mock_validate.side_effect = AuthError("Invalid token")
-
+    from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
+    with patch("src.handlers.users_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")):
         event = _make_apigw_event("GET", "/v1/users", auth_header="Bearer bad-token")
         response = users_handler_module.handler(event, MagicMock())
-
     assert response["statusCode"] == 401

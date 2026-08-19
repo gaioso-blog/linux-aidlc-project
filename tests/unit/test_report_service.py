@@ -1,6 +1,7 @@
 """Unit tests for ReportService."""
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from src.models.task import Task, TaskStatus
 from src.models.user import User

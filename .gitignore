@@ -52,6 +52,7 @@ coverage.xml
 *.tfstate.backup
 *.tfstate.*.backup
 *.tfplan
+tfplan
 crash.log
 crash.*.log
 override.tf

@@ -1,8 +1,7 @@
 """User domain model."""
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
@@ -12,7 +11,7 @@ class User(BaseModel):
     email: str = Field(..., description="User email address")
     name: str = Field(..., description="User display name")
     created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
     model_config = {"use_enum_values": True}
@@ -25,5 +24,5 @@ class User(BaseModel):
             user_id=sub,
             email=attr_map.get("email", ""),
             name=attr_map.get("name", attr_map.get("email", sub)),
-            created_at=attr_map.get("created_at", datetime.now(timezone.utc).isoformat()),
+            created_at=attr_map.get("created_at", datetime.now(UTC).isoformat()),
         )

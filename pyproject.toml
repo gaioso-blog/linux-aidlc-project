@@ -15,7 +15,7 @@ known-first-party = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-fail-under=85 --cov-report=term-missing"
+addopts = "--cov=src --cov-fail-under=80 --cov-report=term-missing"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

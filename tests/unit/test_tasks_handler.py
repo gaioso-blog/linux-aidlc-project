@@ -39,10 +39,10 @@ def reset_service():
 
 @pytest.fixture(autouse=True)
 def mock_auth():
-    """Patch validate_token to always return a valid claims dict."""
-    with patch.object(tasks_handler_module, "validate_token") as mock_validate:
-        mock_validate.return_value = {"sub": "user-test-sub", "email": "test@ex.com"}
-        yield mock_validate
+    """Patch _require_auth to always return valid claims (API GW authorizer already validated token)."""
+    with patch.object(tasks_handler_module, "_require_auth") as mock_req:
+        mock_req.return_value = {"sub": "user-test-sub", "email": "test@ex.com"}
+        yield mock_req
 
 
 def test_create_task_happy_path():
@@ -162,13 +162,10 @@ def test_delete_task_returns_200():
 
 
 def test_missing_auth_header_returns_401():
-    """GET /v1/tasks with a bad token returns 401."""
-    from src.utils.auth import AuthError
+    """GET /v1/tasks with missing auth claims returns 401."""
+    from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
 
-    with patch.object(tasks_handler_module, "validate_token") as mock_validate:
-        mock_validate.side_effect = AuthError("Missing Authorization header")
-
+    with patch("src.handlers.tasks_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")):
         event = _make_apigw_event("GET", "/v1/tasks", auth_header="")
         response = tasks_handler_module.handler(event, MagicMock())
-
     assert response["statusCode"] == 401

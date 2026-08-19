@@ -1,6 +1,5 @@
 """Email notification service via Amazon SES."""
 import os
-from typing import Optional
 
 import boto3
 from aws_lambda_powertools import Logger
@@ -20,7 +19,7 @@ class NotificationService:
         self._from_email = os.environ.get("SES_FROM_EMAIL", "noreply@example.com")
 
     def send_assignment_email(
-        self, task: Task, assignee_email: Optional[str] = None, assignee_id: Optional[str] = None
+        self, task: Task, assignee_email: str | None = None, assignee_id: str | None = None
     ) -> bool:
         """
         Send an assignment notification email.

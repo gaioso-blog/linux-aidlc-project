@@ -19,7 +19,6 @@ from pydantic import ValidationError
 
 from src.models.task import TaskCreateRequest, TaskUpdateRequest
 from src.services.task_service import TaskNotFoundError, TaskService
-from src.utils.auth import AuthError, extract_token_from_header, validate_token
 
 logger = Logger()
 tracer = Tracer()

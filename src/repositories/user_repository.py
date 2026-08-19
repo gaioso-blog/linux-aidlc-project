@@ -1,9 +1,7 @@
 """DynamoDB repository for User entities (cache/profile store)."""
 import os
-from typing import Optional
 
 import boto3
-from boto3.dynamodb.conditions import Attr
 
 from src.models.user import User
 
@@ -18,7 +16,7 @@ class UserRepository:
         )
         self._table = self._dynamodb.Table(self._table_name)
 
-    def get_by_id(self, user_id: str) -> Optional[User]:
+    def get_by_id(self, user_id: str) -> User | None:
         """Return a user by their Cognito sub UUID, or None."""
         response = self._table.get_item(Key={"user_id": user_id})
         item = response.get("Item")

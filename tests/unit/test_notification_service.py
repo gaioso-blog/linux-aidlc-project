@@ -1,8 +1,9 @@
 """Unit tests for NotificationService."""
-import pytest
 from unittest.mock import MagicMock
 
-from src.models.task import Task, TaskPriority, TaskStatus
+import pytest
+
+from src.models.task import Task, TaskPriority
 from src.services.notification_service import NotificationService
 
 

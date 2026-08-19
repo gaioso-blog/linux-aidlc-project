@@ -1,8 +1,6 @@
 """Unit tests for report_handler Lambda."""
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Eager import so patch.object() can locate module-level names
 import src.handlers.report_handler as report_handler_module
 

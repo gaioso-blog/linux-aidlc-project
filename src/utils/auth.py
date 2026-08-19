@@ -1,12 +1,10 @@
 """JWT validation helper for Amazon Cognito tokens."""
 import json
 import os
-from typing import Optional
 from urllib.request import urlopen
 
 from aws_lambda_powertools import Logger
 from jose import JWTError, jwk, jwt
-from jose.utils import base64url_decode
 
 logger = Logger(child=True)
 
@@ -82,7 +80,7 @@ def validate_token(token: str) -> dict:
         raise AuthError(f"Invalid token: {exc}") from exc
 
 
-def extract_token_from_header(authorization_header: Optional[str]) -> str:
+def extract_token_from_header(authorization_header: str | None) -> str:
     """
     Extract the Bearer token from an Authorization header value.
 
@@ -98,7 +96,7 @@ def extract_token_from_header(authorization_header: Optional[str]) -> str:
     return parts[1]
 
 
-def get_current_user_id(authorization_header: Optional[str]) -> str:
+def get_current_user_id(authorization_header: str | None) -> str:
     """Convenience helper: extract and validate JWT, return the Cognito 'sub'."""
     token = extract_token_from_header(authorization_header)
     claims = validate_token(token)

@@ -1,6 +1,7 @@
 """Unit tests for TaskService."""
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from src.models.task import Task, TaskCreateRequest, TaskPriority, TaskStatus, TaskUpdateRequest
 from src.services.task_service import TaskNotFoundError, TaskService

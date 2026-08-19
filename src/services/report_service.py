@@ -1,10 +1,9 @@
 """Weekly report generation service."""
 from collections import defaultdict
-from typing import Optional
 
 from aws_lambda_powertools import Logger
 
-from src.models.task import Task, TaskStatus
+from src.models.task import Task
 from src.repositories.task_repository import TaskRepository
 from src.repositories.user_repository import UserRepository
 
@@ -19,8 +18,8 @@ class ReportService:
 
     def __init__(
         self,
-        task_repository: Optional[TaskRepository] = None,
-        user_repository: Optional[UserRepository] = None,
+        task_repository: TaskRepository | None = None,
+        user_repository: UserRepository | None = None,
     ) -> None:
         self._task_repo = task_repository or TaskRepository()
         self._user_repo = user_repository or UserRepository()

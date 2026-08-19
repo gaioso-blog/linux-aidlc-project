@@ -2,7 +2,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models.task import Task, TaskCreateRequest, TaskPriority, TaskStatus, TaskUpdateRequest
+from src.models.task import Task, TaskPriority, TaskStatus, TaskUpdateRequest
 from src.models.user import User
 
 

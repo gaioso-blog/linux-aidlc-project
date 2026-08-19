@@ -1,5 +1,4 @@
 """Shared fixtures for integration tests (moto AWS mocking)."""
-import os
 
 import boto3
 import pytest

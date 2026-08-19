@@ -9,11 +9,10 @@ import os
 import boto3
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler import APIGatewayRestResolver, CORSConfig
-from aws_lambda_powertools.event_handler.exceptions import NotFoundError, UnauthorizedError
+from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from src.models.user import User
-from src.utils.auth import AuthError, extract_token_from_header, validate_token
 
 logger = Logger()
 tracer = Tracer()
