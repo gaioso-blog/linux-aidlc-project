@@ -77,6 +77,10 @@ jobs:
     name: Terraform Validate & Plan
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -126,19 +130,19 @@ jobs:
           path: ${{ env.TF_WORKING_DIR }}/tf-plan.txt
 
       - name: Post plan summary to PR
-        uses: actions/github-script@v7
         if: always() && github.event_name == 'pull_request'
-        with:
-          script: |
-            const fs = require('fs');
-            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/tf-plan.txt', 'utf8').slice(-8000);
-            const body = `### 🏗️ Terraform Plan\n\`\`\`\n${plan}\n\`\`\``;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body
-            });
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo '### 🏗️ Terraform Plan'
+            echo '```'
+            tail -c 8000 "${{ env.TF_WORKING_DIR }}/tf-plan.txt"
+            echo '```'
+          } > plan-comment.md
+          gh pr comment "$PR" --body-file plan-comment.md
 
   # ──────────────────────────────────────────────
   # Abre (ou reaproveita) PR para main
