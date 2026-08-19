@@ -1,0 +1,79 @@
+{
+  "unit": "task-manager-api",
+  "generated_at": "2025-07-04",
+  "testing_contract_sha256": "sha256:a5f2021a94ecdb2d8b937aed5bd6d19366a0a3a968fedfb13d1a69e60796e344",
+  "coverage": {
+    "total_pct": 86.9,
+    "target_pct": 85,
+    "status": "PASS"
+  },
+  "test_counts": {
+    "total": 66,
+    "unit": 56,
+    "integration": 10,
+    "frontend_manual": 28
+  },
+  "requirements_coverage": [
+    {
+      "requirement": "CRUD de tarefas",
+      "files": [
+        "src/models/task.py",
+        "src/repositories/task_repository.py",
+        "src/services/task_service.py",
+        "src/handlers/tasks_handler.py"
+      ],
+      "tests": [
+        "tests/unit/test_models.py",
+        "tests/unit/test_task_service.py",
+        "tests/unit/test_tasks_handler.py",
+        "tests/integration/test_task_repository.py"
+      ]
+    },
+    {
+      "requirement": "Autenticação Cognito JWT",
+      "files": ["src/utils/auth.py", "src/handlers/tasks_handler.py", "src/handlers/users_handler.py"],
+      "tests": ["tests/unit/test_utils.py", "tests/unit/test_tasks_handler.py"]
+    },
+    {
+      "requirement": "Notificações SES ao atribuir tarefa",
+      "files": ["src/services/notification_service.py", "src/services/task_service.py"],
+      "tests": ["tests/unit/test_notification_service.py", "tests/unit/test_task_service.py"]
+    },
+    {
+      "requirement": "Relatório semanal EventBridge + SES",
+      "files": [
+        "src/services/report_service.py",
+        "src/handlers/report_handler.py",
+        "infra/modules/eventbridge/main.tf"
+      ],
+      "tests": [
+        "tests/unit/test_report_service.py",
+        "tests/unit/test_report_handler.py"
+      ]
+    },
+    {
+      "requirement": "Frontend SPA Kanban",
+      "files": ["frontend/index.html", "frontend/app.js", "frontend/styles.css"],
+      "tests": ["tests/frontend_smoke_test.md"]
+    },
+    {
+      "requirement": "IaC Terraform",
+      "files": [
+        "infra/modules/lambda/",
+        "infra/modules/api_gateway/",
+        "infra/modules/dynamodb/",
+        "infra/modules/cognito/",
+        "infra/modules/ses/",
+        "infra/modules/eventbridge/",
+        "infra/modules/frontend/",
+        "infra/environments/dev/"
+      ],
+      "tests": []
+    },
+    {
+      "requirement": "CI/CD GitHub Actions",
+      "files": [".github/workflows/ci.yml"],
+      "tests": []
+    }
+  ]
+}

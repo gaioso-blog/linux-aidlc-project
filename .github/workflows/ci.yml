@@ -1,0 +1,127 @@
+name: CI
+
+# Roda em todo push para feature/* e em PRs para main
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "fix/**"
+      - "chore/**"
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: "3.13"
+  TF_WORKING_DIR: infra/environments/dev
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Testes: lint, format, pytest
+  # ──────────────────────────────────────────────
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+
+      - name: Format check (black)
+        run: black --check src/ tests/
+
+      - name: Tests + Coverage
+        env:
+          TABLE_NAME_TASKS: tasks-table
+          TABLE_NAME_USERS: users-table
+          COGNITO_USER_POOL_ID: us-east-1_test
+          COGNITO_APP_CLIENT_ID: test-client-id
+          SES_FROM_EMAIL: noreply@test.com
+          SES_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+          AWS_DEFAULT_REGION: us-east-1
+          POWERTOOLS_SERVICE_NAME: task-manager-ci
+          LOG_LEVEL: ERROR
+        run: |
+          pytest tests/ \
+            --cov=src \
+            --cov-fail-under=85 \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            -v
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ──────────────────────────────────────────────
+  # Terraform validate + plan (sem apply)
+  # Só roda em PRs para main
+  # ──────────────────────────────────────────────
+  terraform-plan:
+    name: Terraform Validate & Plan
+    runs-on: ubuntu-latest
+    # Só em PRs — em pushes de feature não temos credenciais AWS
+    if: github.event_name == 'pull_request'
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=task-manager/dev/terraform.tfstate" \
+            -backend-config="region=us-east-1"
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -compact-warnings -no-color 2>&1 | tee tf-plan.txt
+
+      - name: Post plan summary to PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/../../tf-plan.txt', 'utf8').slice(-8000);
+            const body = `### 🏗️ Terraform Plan\n\`\`\`\n${plan}\n\`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

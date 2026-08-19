@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Gestão de tarefas do time" />
+  <meta name="theme-color" content="#6366f1" />
+  <title>Task Manager</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=7" />
+</head>
+<body>
+
+<!-- ═══════════════════════ SPLASH / LOADING ═══════════════════════ -->
+<div id="splash" class="splash">
+  <div class="splash__logo">✓</div>
+  <div class="splash__spinner"></div>
+  <p class="splash__text">Carregando seu quadro…</p>
+</div>
+
+<!-- ═══════════════════════════ APP ════════════════════════════════ -->
+<div id="app" class="app" hidden>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="header__inner">
+      <div class="brand">
+        <div class="brand__mark">✓</div>
+        <span class="brand__name">Task<span class="brand__accent">Manager</span></span>
+      </div>
+
+      <div class="header__right">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Alternar tema" title="Alternar tema">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <div class="user-chip">
+          <div class="user-chip__avatar" id="userAvatar">?</div>
+          <span class="user-chip__name" id="userName">—</span>
+        </div>
+
+        <button id="logoutBtn" class="icon-btn" type="button" aria-label="Sair" title="Sair">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- Page heading + actions -->
+    <div class="page-bar">
+      <div class="page-bar__text">
+        <h1 class="page-bar__title">Quadro de Tarefas</h1>
+        <p class="page-bar__sub" id="pageSubtitle">Acompanhe o progresso do time</p>
+      </div>
+      <button id="newTaskBtn" class="btn btn--primary" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Nova Tarefa</span>
+      </button>
+    </div>
+
+    <!-- Metric cards -->
+    <section class="metrics" aria-label="Resumo">
+      <div class="metric metric--pending">
+        <div class="metric__icon">◷</div>
+        <div class="metric__data">
+          <span class="metric__value" id="mPending">0</span>
+          <span class="metric__label">Pendentes</span>
+        </div>
+      </div>
+      <div class="metric metric--progress">
+        <div class="metric__icon">◐</div>
+        <div class="metric__data">
+          <span class="metric__value" id="mProgress">0</span>
+          <span class="metric__label">Em andamento</span>
+        </div>
+      </div>
+      <div class="metric metric--done">
+        <div class="metric__icon">●</div>
+        <div class="metric__data">
+          <span class="metric__value" id="mDone">0</span>
+          <span class="metric__label">Concluídas</span>
+        </div>
+      </div>
+      <div class="metric metric--total">
+        <div class="metric__icon">Σ</div>
+        <div class="metric__data">
+          <span class="metric__value" id="mTotal">0</span>
+          <span class="metric__label">Total</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kanban -->
+    <section class="board" aria-label="Quadro Kanban">
+      <div class="col" data-status="pending">
+        <header class="col__head">
+          <span class="col__dot col__dot--pending"></span>
+          <h2 class="col__title">Pendente</h2>
+          <span class="col__count" id="count-pending">0</span>
+        </header>
+        <div class="col__list" id="list-pending" data-status="pending"></div>
+      </div>
+
+      <div class="col" data-status="in_progress">
+        <header class="col__head">
+          <span class="col__dot col__dot--progress"></span>
+          <h2 class="col__title">Em Andamento</h2>
+          <span class="col__count" id="count-in_progress">0</span>
+        </header>
+        <div class="col__list" id="list-in_progress" data-status="in_progress"></div>
+      </div>
+
+      <div class="col" data-status="done">
+        <header class="col__head">
+          <span class="col__dot col__dot--done"></span>
+          <h2 class="col__title">Concluído</h2>
+          <span class="col__count" id="count-done">0</span>
+        </header>
+        <div class="col__list" id="list-done" data-status="done"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════ MODAL ══════════════════════════════ -->
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel" role="document">
+    <header class="modal__head">
+      <h2 class="modal__title" id="modalTitle">Nova Tarefa</h2>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="icon-btn icon-btn--sm" type="button" id="deleteBtn" hidden aria-label="Excluir tarefa" title="Excluir tarefa" style="color:var(--red-500)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+        <button class="icon-btn icon-btn--sm" type="button" data-close aria-label="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <form id="form" class="modal__body" novalidate>
+      <input type="hidden" id="fId" />
+
+      <div class="field">
+        <label class="field__label" for="fTitle">Título <span class="field__req">*</span></label>
+        <input class="field__input" type="text" id="fTitle" placeholder="Ex: Revisar pull request #42" maxlength="200" autocomplete="off" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="fDesc">Descrição</label>
+        <textarea class="field__input field__input--area" id="fDesc" rows="3" maxlength="2000" placeholder="Contexto, links, critérios de aceite…"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label" for="fPriority">Prioridade</label>
+          <div class="select-wrap">
+            <select class="field__input" id="fPriority">
+              <option value="low">Baixa</option>
+              <option value="medium" selected>Média</option>
+              <option value="high">Alta</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="fStatus">Status</label>
+          <div class="select-wrap">
+            <select class="field__input" id="fStatus">
+              <option value="pending">Pendente</option>
+              <option value="in_progress">Em Andamento</option>
+              <option value="done">Concluído</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label" for="fAssignee">Responsável</label>
+          <div class="select-wrap">
+            <select class="field__input" id="fAssignee">
+              <option value="">Não atribuído</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="fDue">Prazo</label>
+          <input class="field__input" type="date" id="fDue" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="fEffort">Estimativa (horas)</label>
+        <input class="field__input" type="number" id="fEffort" min="0" step="0.5" placeholder="Ex: 4" />
+      </div>
+
+      <footer class="modal__foot">
+        <div style="flex:1"></div>
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary" id="saveBtn">Salvar Tarefa</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ TOAST ══════════════════════════════ -->
+<!-- Confirm Delete Dialog -->
+<div id="confirmDelete" class="confirm-dialog" hidden role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="confirm-dialog__backdrop"></div>
+  <div class="confirm-dialog__box">
+    <div class="confirm-dialog__icon">🗑️</div>
+    <h3 class="confirm-dialog__title" id="confirmTitle">Excluir tarefa?</h3>
+    <p class="confirm-dialog__msg" id="confirmMsg">Esta ação não pode ser desfeita.</p>
+    <div class="confirm-dialog__actions">
+      <button type="button" class="btn btn--ghost" id="confirmCancel">Cancelar</button>
+      <button type="button" class="btn btn--primary" id="confirmOk" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 2px 8px rgba(239,68,68,.35)">Sim, excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden role="status" aria-live="polite">
+  <span class="toast__icon" id="toastIcon">⚠</span>
+  <span class="toast__msg" id="toastMsg"></span>
+  <button class="toast__close" type="button" id="toastClose" aria-label="Fechar">×</button>
+</div>
+
+<script>
+  window.APP_CONFIG = {
+    API_BASE_URL:      "https://55mmgn9541.execute-api.us-east-1.amazonaws.com/dev",
+    COGNITO_DOMAIN:    "https://task-manager-dev.auth.us-east-1.amazoncognito.com",
+    COGNITO_CLIENT_ID: "2hspqeq5h1k6tts5hdpmm2nvnf",
+    REDIRECT_URI:      window.location.origin + "/",
+  };
+  // Restore theme before paint to avoid flash
+  (function () {
+    var t = localStorage.getItem("tm_theme");
+    if (t) document.documentElement.dataset.theme = t;
+  })();
+</script>
+<script src="app.js?v=7"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+name: Deploy
+
+# Roda SOMENTE quando um PR é mergeado para main
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: "3.13"
+  TF_WORKING_DIR: infra/environments/dev
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Job 1: Testes (gate antes do deploy)
+  # ──────────────────────────────────────────────
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+
+      - name: Format check (black)
+        run: black --check src/ tests/
+
+      - name: Tests + Coverage
+        env:
+          TABLE_NAME_TASKS: tasks-table
+          TABLE_NAME_USERS: users-table
+          COGNITO_USER_POOL_ID: us-east-1_test
+          COGNITO_APP_CLIENT_ID: test-client-id
+          SES_FROM_EMAIL: noreply@test.com
+          SES_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+          AWS_DEFAULT_REGION: us-east-1
+          POWERTOOLS_SERVICE_NAME: task-manager-ci
+          LOG_LEVEL: ERROR
+        run: |
+          pytest tests/ \
+            --cov=src \
+            --cov-fail-under=85 \
+            --cov-report=term-missing \
+            -v
+
+  # ──────────────────────────────────────────────
+  # Job 2: Deploy (só roda se test passar)
+  # ──────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install production dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=task-manager/dev/terraform.tfstate" \
+            -backend-config="region=us-east-1"
+
+      - name: Build Lambda package
+        run: |
+          pip install \
+            --platform manylinux2014_x86_64 \
+            --target dist/package \
+            --implementation cp \
+            --python-version 3.13 \
+            --only-binary=:all: \
+            aws-lambda-powertools boto3 pydantic python-jose aws-xray-sdk
+          cp -r src dist/package/
+          cd dist/package && zip -r ../../dist/lambda.zip . -q
+          echo "Lambda package: $(du -sh dist/lambda.zip | cut -f1)"
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -compact-warnings
+
+      - name: Get Terraform outputs
+        id: tf
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          echo "bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
+          echo "cf_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+          echo "api_url=$(terraform output -raw api_url)" >> $GITHUB_OUTPUT
+          echo "cognito_domain=$(terraform output -raw cognito_domain)" >> $GITHUB_OUTPUT
+          echo "cognito_client_id=$(terraform output -raw cognito_client_id)" >> $GITHUB_OUTPUT
+          echo "frontend_url=https://$(terraform output -raw cloudfront_domain)" >> $GITHUB_OUTPUT
+
+      - name: Inject runtime config into frontend
+        run: |
+          sed -i \
+            -e "s|https://55mmgn9541.execute-api.us-east-1.amazonaws.com/dev|${{ steps.tf.outputs.api_url }}|g" \
+            -e "s|https://task-manager-dev.auth.us-east-1.amazoncognito.com|${{ steps.tf.outputs.cognito_domain }}|g" \
+            -e "s|2hspqeq5h1k6tts5hdpmm2nvnf|${{ steps.tf.outputs.cognito_client_id }}|g" \
+            frontend/index.html
+
+      - name: Deploy frontend to S3
+        run: |
+          # Static assets: long cache (1 year)
+          aws s3 sync frontend/ s3://${{ steps.tf.outputs.bucket }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html"
+          # index.html: no-cache so config changes reach users immediately
+          aws s3 cp frontend/index.html s3://${{ steps.tf.outputs.bucket }}/index.html \
+            --cache-control "no-cache, must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.tf.outputs.cf_id }} \
+            --paths "/*"
+
+      - name: Smoke test
+        run: |
+          API="${{ steps.tf.outputs.api_url }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$API/v1/tasks")
+          echo "GET /v1/tasks → $STATUS"
+          [ "$STATUS" = "401" ] || [ "$STATUS" = "200" ] || (echo "Unexpected status $STATUS" && exit 1)
+          echo "Smoke test PASSED"
+
+      - name: Deployment summary
+        run: |
+          echo "## ✅ Deploy concluído" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Recurso | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ steps.tf.outputs.frontend_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API | ${{ steps.tf.outputs.api_url }} |" >> $GITHUB_STEP_SUMMARY
