@@ -1,4 +1,5 @@
 """Weekly report generation service."""
+
 from collections import defaultdict
 
 from aws_lambda_powertools import Logger
@@ -41,9 +42,7 @@ class ReportService:
         html = self._build_report_html(aggregated, total_tasks=len(tasks))
         return html
 
-    def _aggregate_tasks(
-        self, tasks: list[Task], user_map: UserMap
-    ) -> dict:
+    def _aggregate_tasks(self, tasks: list[Task], user_map: UserMap) -> dict:
         """
         Build an aggregation dict:
         {

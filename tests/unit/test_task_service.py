@@ -1,4 +1,5 @@
 """Unit tests for TaskService."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,7 +25,11 @@ def mock_user_repo():
 
 @pytest.fixture
 def service(mock_repo, mock_notifier, mock_user_repo):
-    return TaskService(task_repository=mock_repo, notification_service=mock_notifier, user_repository=mock_user_repo)
+    return TaskService(
+        task_repository=mock_repo,
+        notification_service=mock_notifier,
+        user_repository=mock_user_repo,
+    )
 
 
 def test_create_task_persists_and_returns_task(service, mock_repo):
@@ -133,10 +138,13 @@ def test_update_task_applies_partial_fields(service, mock_repo):
 def test_update_task_all_fields(service, mock_repo, mock_notifier, mock_user_repo):
     """update_task() applies all fields including triggering notification on assignee change."""
     from src.models.user import User
+
     original = Task(title="Task", assignee_id="user-old")
     mock_repo.get_by_id.return_value = original
     mock_repo.update.return_value = original
-    mock_user_repo.get_by_id.return_value = User(user_id="user-new", email="new@example.com", name="New User")
+    mock_user_repo.get_by_id.return_value = User(
+        user_id="user-new", email="new@example.com", name="New User"
+    )
 
     request = TaskUpdateRequest(
         title="New title",

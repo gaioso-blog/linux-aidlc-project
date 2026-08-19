@@ -1,4 +1,5 @@
 """Unit tests for ReportService."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -69,9 +70,7 @@ def test_report_empty_backlog(report_service, mock_task_repo, mock_user_repo):
 
 def test_report_total_task_count(report_service, mock_task_repo, mock_user_repo):
     """Report shows the correct total task count."""
-    mock_task_repo.list_all.return_value = [
-        Task(title=f"Task {i}") for i in range(5)
-    ]
+    mock_task_repo.list_all.return_value = [Task(title=f"Task {i}") for i in range(5)]
     mock_user_repo.list_all.return_value = []
 
     html = report_service.generate_weekly_report()

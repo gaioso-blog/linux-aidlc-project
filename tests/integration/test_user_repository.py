@@ -1,4 +1,5 @@
 """Integration tests for UserRepository against a mocked DynamoDB (moto)."""
+
 from moto import mock_aws
 
 from src.models.user import User

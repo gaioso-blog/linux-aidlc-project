@@ -1,4 +1,5 @@
 """Unit tests for users_handler Lambda."""
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -81,7 +82,10 @@ def test_list_users_returns_200():
 def test_list_users_unauthorized_returns_401():
     """GET /v1/users with invalid token returns 401."""
     from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
-    with patch("src.handlers.users_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")):
+
+    with patch(
+        "src.handlers.users_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")
+    ):
         event = _make_apigw_event("GET", "/v1/users", auth_header="Bearer bad-token")
         response = users_handler_module.handler(event, MagicMock())
     assert response["statusCode"] == 401

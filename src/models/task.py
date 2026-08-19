@@ -1,4 +1,5 @@
 """Task domain model."""
+
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -31,12 +32,8 @@ class Task(BaseModel):
     effort_estimate: float | None = Field(
         default=None, ge=0, description="Effort estimate in hours"
     )
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     model_config = {"use_enum_values": True}
 

@@ -4,6 +4,7 @@ Routes:
     GET /v1/users     — list all users from Cognito
     GET /v1/users/me  — return the current user's profile from JWT
 """
+
 import os
 
 import boto3

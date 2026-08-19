@@ -1,4 +1,5 @@
 """Application configuration loaded from environment variables."""
+
 import os
 from dataclasses import dataclass, field
 
@@ -18,9 +19,7 @@ class Config:
     ses_from_email: str = field(
         default_factory=lambda: os.environ.get("SES_FROM_EMAIL", "noreply@example.com")
     )
-    ses_region: str = field(
-        default_factory=lambda: os.environ.get("SES_REGION", "us-east-1")
-    )
+    ses_region: str = field(default_factory=lambda: os.environ.get("SES_REGION", "us-east-1"))
     aws_region: str = field(
         default_factory=lambda: os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     )

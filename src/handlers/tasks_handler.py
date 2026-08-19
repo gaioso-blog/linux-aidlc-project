@@ -7,6 +7,7 @@ Routes:
     PUT    /v1/tasks/{task_id}   — update a task
     DELETE /v1/tasks/{task_id}   — delete a task
 """
+
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler import APIGatewayRestResolver, CORSConfig
 from aws_lambda_powertools.event_handler.exceptions import (

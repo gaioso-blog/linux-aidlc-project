@@ -1,4 +1,5 @@
 """DynamoDB repository for Task entities."""
+
 import os
 from decimal import Decimal
 
@@ -34,6 +35,7 @@ def _from_dynamo(item: dict) -> dict:
         else:
             result[k] = v
     return result
+
 
 class TaskRepository:
     """Handles all DynamoDB persistence for Task entities."""
@@ -89,9 +91,7 @@ class TaskRepository:
 
     def list_by_assignee(self, assignee_id: str) -> list[Task]:
         """Return all tasks assigned to a specific user (scan + filter)."""
-        response = self._table.scan(
-            FilterExpression=Attr("assignee_id").eq(assignee_id)
-        )
+        response = self._table.scan(FilterExpression=Attr("assignee_id").eq(assignee_id))
         items = response.get("Items", [])
         while "LastEvaluatedKey" in response:
             response = self._table.scan(
@@ -103,9 +103,7 @@ class TaskRepository:
 
     def list_by_status(self, status: str) -> list[Task]:
         """Return all tasks with a given status (scan + filter)."""
-        response = self._table.scan(
-            FilterExpression=Attr("status").eq(status)
-        )
+        response = self._table.scan(FilterExpression=Attr("status").eq(status))
         items = response.get("Items", [])
         while "LastEvaluatedKey" in response:
             response = self._table.scan(

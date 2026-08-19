@@ -1,4 +1,5 @@
 """Integration tests for TaskRepository against a mocked DynamoDB (moto)."""
+
 from moto import mock_aws
 
 from src.models.task import Task, TaskStatus

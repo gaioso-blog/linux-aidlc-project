@@ -7,6 +7,7 @@ Flow:
     2. List all users from Cognito to get email addresses
     3. Send report email to all users via NotificationService
 """
+
 import os
 
 import boto3

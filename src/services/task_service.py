@@ -1,4 +1,5 @@
 """Business logic for Task management."""
+
 import os
 
 import boto3
@@ -115,7 +116,9 @@ class TaskService:
             user_pool_id = os.environ.get("COGNITO_USER_POOL_ID", "")
             if not user_pool_id:
                 return None
-            cognito = boto3.client("cognito-idp", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+            cognito = boto3.client(
+                "cognito-idp", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+            )
             resp = cognito.list_users(
                 UserPoolId=user_pool_id,
                 Filter=f'sub = "{user_id}"',
@@ -126,7 +129,9 @@ class TaskService:
                 attrs = {a["Name"]: a["Value"] for a in users[0].get("Attributes", [])}
                 return attrs.get("email")
         except Exception as exc:
-            logger.warning("Failed to resolve user email from Cognito", user_id=user_id, error=str(exc))
+            logger.warning(
+                "Failed to resolve user email from Cognito", user_id=user_id, error=str(exc)
+            )
         return None
 
     def list_tasks(
@@ -142,7 +147,9 @@ class TaskService:
         if status_filter and assignee_filter:
             # Both filters: scan all and apply both in-memory
             tasks = self._repo.list_all()
-            tasks = [t for t in tasks if t.status == status_filter and t.assignee_id == assignee_filter]
+            tasks = [
+                t for t in tasks if t.status == status_filter and t.assignee_id == assignee_filter
+            ]
         elif assignee_filter:
             tasks = self._repo.list_by_assignee(assignee_filter)
         elif status_filter:

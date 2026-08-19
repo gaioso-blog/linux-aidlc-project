@@ -1,4 +1,5 @@
 """JWT validation helper for Amazon Cognito tokens."""
+
 import json
 import os
 from urllib.request import urlopen
@@ -28,10 +29,7 @@ def _get_jwks(user_pool_id: str, region: str) -> dict:
     if cache_key in _JWKS_CACHE:
         return _JWKS_CACHE[cache_key]
 
-    url = (
-        f"https://cognito-idp.{region}.amazonaws.com/"
-        f"{user_pool_id}/.well-known/jwks.json"
-    )
+    url = f"https://cognito-idp.{region}.amazonaws.com/" f"{user_pool_id}/.well-known/jwks.json"
     try:
         with urlopen(url, timeout=5) as resp:  # noqa: S310
             jwks = json.loads(resp.read())

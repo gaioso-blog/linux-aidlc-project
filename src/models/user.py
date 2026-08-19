@@ -1,4 +1,5 @@
 """User domain model."""
+
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
@@ -10,9 +11,7 @@ class User(BaseModel):
     user_id: str = Field(..., description="Cognito sub (UUID)")
     email: str = Field(..., description="User email address")
     name: str = Field(..., description="User display name")
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     model_config = {"use_enum_values": True}
 

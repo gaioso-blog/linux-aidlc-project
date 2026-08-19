@@ -1,4 +1,5 @@
 """Email notification service via Amazon SES."""
+
 import os
 
 import boto3
@@ -83,9 +84,7 @@ class NotificationService:
             else ""
         )
         description_section = (
-            f"<p><strong>Descrição:</strong><br>{task.description}</p>"
-            if task.description
-            else ""
+            f"<p><strong>Descrição:</strong><br>{task.description}</p>" if task.description else ""
         )
 
         return f"""

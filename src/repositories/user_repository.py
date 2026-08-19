@@ -1,4 +1,5 @@
 """DynamoDB repository for User entities (cache/profile store)."""
+
 import os
 
 import boto3

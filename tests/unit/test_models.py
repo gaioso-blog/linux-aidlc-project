@@ -1,4 +1,5 @@
 """Unit tests for Pydantic data models."""
+
 import pytest
 from pydantic import ValidationError
 

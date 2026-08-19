@@ -1,4 +1,5 @@
 """Unit tests for tasks_handler Lambda."""
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -54,7 +55,9 @@ def test_create_task_happy_path():
         mock_svc.create_task.return_value = task
         mock_svc_factory.return_value = mock_svc
 
-        event = _make_apigw_event("POST", "/v1/tasks", body={"title": "New task", "priority": "high"})
+        event = _make_apigw_event(
+            "POST", "/v1/tasks", body={"title": "New task", "priority": "high"}
+        )
         response = tasks_handler_module.handler(event, MagicMock())
 
     assert response["statusCode"] == 201
@@ -165,7 +168,9 @@ def test_missing_auth_header_returns_401():
     """GET /v1/tasks with missing auth claims returns 401."""
     from aws_lambda_powertools.event_handler.exceptions import UnauthorizedError
 
-    with patch("src.handlers.tasks_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")):
+    with patch(
+        "src.handlers.tasks_handler._require_auth", side_effect=UnauthorizedError("Unauthorized")
+    ):
         event = _make_apigw_event("GET", "/v1/tasks", auth_header="")
         response = tasks_handler_module.handler(event, MagicMock())
     assert response["statusCode"] == 401
