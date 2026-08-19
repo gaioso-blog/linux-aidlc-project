@@ -53,6 +53,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           POWERTOOLS_SERVICE_NAME: task-manager-ci
           LOG_LEVEL: ERROR
+          POWERTOOLS_TRACE_DISABLED: "true"
         run: |
           pytest tests/ \
             --cov=src \
