@@ -126,3 +126,47 @@ jobs:
               repo: context.repo.repo,
               body
             });
+
+  # ──────────────────────────────────────────────
+  # Auto-PR: abre PR para main após CI passar
+  # Só roda em pushes de feature/fix/chore (não em PRs)
+  # ──────────────────────────────────────────────
+  open-pr:
+    name: Open PR to main
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open or update PR to main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          TITLE="feat: merge ${BRANCH} into main"
+          BODY="CI passou ✅ — testes, lint e format OK.
+
+          **Branch:** \`${BRANCH}\`
+          **Commit:** ${{ github.sha }}
+
+          Revise as mudanças e aprove para disparar o deploy."
+
+          # Check if PR already exists for this branch
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING" ]; then
+            echo "PR #${EXISTING} já existe para ${BRANCH} — atualizando comentário"
+            gh pr comment "$EXISTING" --body "CI repassou ✅ — commit ${{ github.sha }}"
+          else
+            gh pr create \
+              --title "$TITLE" \
+              --body "$BODY" \
+              --base main \
+              --head "$BRANCH"
+            echo "PR criado para ${BRANCH} → main"
+          fi
