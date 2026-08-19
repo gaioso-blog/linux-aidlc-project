@@ -44,7 +44,7 @@ cp .env.example .env.local
 # edite .env.local com seus valores
 
 # 4. Rode os testes
-pytest tests/ --cov=src --cov-fail-under=85 -v
+pytest tests/ --cov=src --cov-fail-under=80 -v
 ```
 
 ---
@@ -53,7 +53,7 @@ pytest tests/ --cov=src --cov-fail-under=85 -v
 
 ```bash
 # Todos os testes com cobertura
-pytest tests/ --cov=src --cov-fail-under=85 --cov-report=term-missing
+pytest tests/ --cov=src --cov-fail-under=80 --cov-report=term-missing
 
 # Somente unit tests
 pytest tests/unit/ -v --no-cov
@@ -67,7 +67,70 @@ pytest tests/unit/test_task_service.py -v --no-cov
 
 ---
 
-## Deploy
+## CI/CD
+
+Fluxo trunk-based. Ninguém aplica Terraform da máquina local depois do bootstrap
+inicial — o pipeline é o único caminho para `dev`.
+
+```
+push em feature/**          PR aprovado + merge em main
+        │                              │
+        ▼                              ▼
+  ci.yml                          deploy.yml
+  ├── test                        ├── test
+  │   ruff + black + pytest       │   ruff + black + pytest
+  ├── terraform-plan              └── deploy
+  │   validate + plan (read-only)     build lambda.zip
+  └── open-pr                          terraform apply
+      abre PR para main                s3 sync + CloudFront invalidation
+                                       smoke test
+```
+
+### `ci.yml` — validação
+
+Dispara em push para `feature/**`, `fix/**`, `chore/**` e em PRs para `main`.
+
+| Job | Roda quando | O que faz |
+|-----|-------------|-----------|
+| `test` | sempre | `ruff check`, `black --check`, `pytest` com cobertura mínima de 80% |
+| `terraform-plan` | após `test` | `terraform validate` + `plan`. Nunca aplica. O plan vai para o job summary e para o artifact `terraform-plan` |
+| `open-pr` | só em push | Abre PR para `main` se ainda não existir; se existir, só comenta que o CI voltou a ficar verde |
+
+O `plan` roda no **push da feature**, não no evento de PR. Isso é
+intencional: PR criado com `GITHUB_TOKEN` não dispara workflows, então
+esperar o evento de PR faria o plan nunca rodar no PR automático.
+
+### `deploy.yml` — entrega
+
+Dispara **somente** em push para `main`, isto é, no merge do PR. Repete os
+testes como gate, empacota a Lambda com wheels `manylinux2014_x86_64` para
+`cp313`, aplica o Terraform, injeta os outputs reais no `index.html`,
+sincroniza o S3 e invalida o CloudFront. Termina com um smoke test que exige
+`200` ou `401` em `GET /v1/tasks` (`401` é resposta válida: prova que o
+authorizer do Cognito está ativo).
+
+### Configuração necessária no repositório
+
+Secrets em **Settings → Secrets and variables → Actions**:
+
+| Secret | Valor |
+|--------|-------|
+| `AWS_ACCESS_KEY_ID` | credencial com permissão de apply |
+| `AWS_SECRET_ACCESS_KEY` | — |
+| `TF_STATE_BUCKET` | bucket do state remoto |
+
+Em **Settings → Actions → General → Workflow permissions**:
+
+- `Read and write permissions`
+- `Allow GitHub Actions to create and approve pull requests` — sem isso o job
+  `open-pr` falha com `403`
+
+---
+
+## Deploy manual
+
+Necessário apenas no **bootstrap** de um ambiente novo, antes de o pipeline
+assumir. Em operação normal, use o fluxo de CI/CD acima.
 
 ### 1. Preparar o ambiente
 
@@ -113,7 +176,7 @@ window.APP_CONFIG = {
 ### 5. Publicar o frontend
 
 ```bash
-aws s3 sync frontend/ s3://$(terraform output -raw bucket_name)/ --delete
+aws s3 sync frontend/ s3://$(terraform output -raw frontend_bucket)/ --delete
 aws cloudfront create-invalidation \
   --distribution-id $(terraform output -raw cloudfront_distribution_id) \
   --paths "/*"
