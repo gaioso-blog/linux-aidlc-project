@@ -122,7 +122,7 @@ jobs:
           echo "api_url=$(terraform output -raw api_url)" >> $GITHUB_OUTPUT
           echo "cognito_domain=$(terraform output -raw cognito_domain)" >> $GITHUB_OUTPUT
           echo "cognito_client_id=$(terraform output -raw cognito_client_id)" >> $GITHUB_OUTPUT
-          echo "frontend_url=https://$(terraform output -raw cloudfront_domain)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
 
       - name: Inject runtime config into frontend
         run: |
